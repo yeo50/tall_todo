@@ -7,34 +7,37 @@ new class extends Component {
     /**
      * Log the current user out of the application.
      */
+    public $testingText;
+    public $darkMode;
+
+    public function mount() {}
     public function logout(Logout $logout): void
     {
         $logout();
 
         $this->redirect('/', navigate: true);
     }
-    public function changeDark() {}
+
+    protected $listeners = ['refresh' => '$refresh'];
+
+    public function toggleDark()
+    {
+        $this->darkMode = !$this->darkMode;
+    }
 }; ?>
 
 <nav x-data="{
-    open: false,
-    darkMode: true,
+    darkMode: localStorage.getItem('darkMode') === 'true',
     toggleDark() {
         this.darkMode = !this.darkMode;
+        localStorage.setItem('darkMode', this.darkMode);
         if (this.darkMode) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
     }
-}" x-init=" $nextTick(() => {
-     if (darkMode) {
-         document.documentElement.classList.add('dark');
-     } else {
-         document.documentElement.classList.remove('dark');
-     }
-
- })"
+}" x-init="if (darkMode) document.documentElement.classList.add('dark')"
     class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,18 +56,20 @@ new class extends Component {
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+
+
             </div>
 
             <!-- Settings Dropdown -->
             <div class="flex items-center ms-6">
-                <div @click="toggleDark()" class="cursor-pointer" :class="darkMode ? 'text-white' : 'text-black'">
-                    <svg x-show="darkMode" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                <div @click="toggleDark();" class="cursor-pointer" :class="darkMode ? 'text-white' : 'text-black'">
+                    <svg x-cloak x-show="darkMode" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
                     </svg>
-                    <svg x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <svg x-cloak x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
                     </svg>
