@@ -1,8 +1,16 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
+Route::get('/test', function () {
+    $now = now();
+
+    $date = $now->format('Y-m-d');
+    dd($date . ' ' . '23:00');
+});
+
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])

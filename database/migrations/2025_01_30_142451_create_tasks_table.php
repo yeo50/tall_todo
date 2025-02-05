@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id');
             $table->foreignId('catalogue_id')->nullable();
             $table->string('name');
             $table->date('due')->nullable();
-            $table->date('remider')->nullable();
+            $table->date('reminder')->nullable();
             $table->timestamps();
         });
     }

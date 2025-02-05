@@ -17,7 +17,15 @@
 </head>
 
 <body class="antialiased font-sans">
-    <div class="p-4 w-full h-[600px] md:flex">
+    <header class="flex justify-end items-center h-14 ">
+        <div>
+            <a href="{{ route('register') }}"
+                class="text-lg hover:text-blue-800 font-bold text-blue-600 py-4 px-3">Register</a>
+            <a href="{{ route('login') }}" class="text-lg hover:text-blue-800 font-bold text-blue-600 py-4 px-3 ">Log
+                in</a>
+        </div>
+    </header>
+    <div class="p-4 w-full h-[calc(100vh-56px)] md:flex">
         <div class="md:hidden">
             <div class="w-28 mx-auto ">
                 <img src="./storage/photos/rightArrow.png" alt="arrow" class="block w-fll h-full">

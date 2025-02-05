@@ -9,6 +9,8 @@
     <title>Sylla To Do</title>
 
     <link rel="shortcut icon" href="./storage/photos/rightArrow.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 
     <!-- Scripts -->
@@ -31,7 +33,8 @@
         <!-- Page Content -->
         <main class="flex ">
             <section x-data="{ open: true }" x-show="open" class=" dark:text-white sm:w-60 lg:w-72 ">
-                <div @click="open = false" class="dark:text-white cursor-pointer py-2 ps-6  w-14 h-14">
+                <div @click="open = false ; $dispatch('enlarge')"
+                    class="dark:text-white cursor-pointer py-2 ps-6  w-14 h-14">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="w-full h-full">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -44,7 +47,7 @@
                     <x-menu-item name="Routine" direct="routine" />
 
                 </div>
-                <template x-teleport='.destination' @click="open = true">
+                <template x-teleport='.destination' @click="open = true; $dispatch('shrink')">
                     <div x-show="!open" class="dark:text-white cursor-pointer py-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="size-6">
