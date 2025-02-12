@@ -7,3 +7,4 @@ Alpine.data("dropdown", () => ({
         this.open = !this.open;
     },
 }));
+console.log("this is testing");
