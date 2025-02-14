@@ -15,10 +15,6 @@ new class extends Component {
         $task->delete();
         $this->dispatch('soft-deleted');
     }
-    public function selection($id)
-    {
-        $this->dispatch('select', $id);
-    }
 };
 ?>
 <div
@@ -26,6 +22,7 @@ new class extends Component {
     <span wire:click="softDelete( {{ $task->id }} )"
         class="w-4 h-4 shrink-0 leading-[13px] text-center text-black/0 text-xs hover:text-blue-700 border cursor-pointer border-blue-600 inline-block rounded-full ">&check;
     </span>
-    <span @click="showTask = true;$wire.selection({{ $task->id }})" class="flex-1">{{ $task->name }} </span>
+    <span @click="showTask = true;$wire.dispatch('select',{id :{{ $task->id }}})" class="flex-1">{{ $task->name }}
+    </span>
 
 </div>
