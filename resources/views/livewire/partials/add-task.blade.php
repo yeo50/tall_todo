@@ -20,9 +20,11 @@ new class extends Component {
     public $completedTasks;
     public $completedCount;
     public $selectedTask;
+    public $selectedTaskId;
     public $selectedName;
     public $selectedDeleteStatus;
     public $selectedImportant;
+    public $keyHistory = [];
 
     public function mount()
     {
@@ -30,9 +32,7 @@ new class extends Component {
         $this->tasks = $this->catalogue->tasks;
         $this->completedTasks = $this->catalogue->tasks()->onlyTrashed()->get();
         $this->completedCount = $this->completedTasks->count();
-        $this->showTask = false;
-        $this->selectedTask = null;
-        $this->showTask = null;
+        $this->keyHistory[] = 1;
     }
     public function setDue($dateString)
     {
@@ -57,6 +57,9 @@ new class extends Component {
         if ($dateString == 'next_week') {
             $this->reminder = Carbon::now()->addWeek()->toDateString();
         }
+        if ($dateString == 'picker') {
+            $this->reminder = Carbon::createFromFormat('Y-m-d\TH:i', $this->reminder)->format('Y-m-d H:i:s');
+        }
     }
     public function submit()
     {
@@ -78,30 +81,38 @@ new class extends Component {
         $this->tasks = $this->catalogue->tasks;
     }
     #[On('soft-deleted')]
-    public function updateTask()
+    public function updateTask($id)
     {
         $this->reloadTask();
+        if ($this->selectedTask !== null && $this->selectedTask->id === $id) {
+            $this->selectedTask->refresh();
+            $this->showTaskDetail();
+        }
     }
     public function restoreDelete($id)
     {
         $this->completedTasks->find($id)->restore();
         $this->reloadTask();
-        $this->selectedTask->refresh();
+        if ($this->selectedTask !== null && $this->selectedTask->id === $id) {
+            $this->selectedTask->refresh();
+            $this->showTaskDetail();
+        }
+    }
+    public function showTaskDetail()
+    {
+        $this->selectedTaskId = $this->selectedTask->id ?? '';
+        $this->keyHistory[] = $this->selectedTaskId;
     }
     #[On('select')]
     public function select($id)
     {
         if ($this->tasks->contains($id)) {
             $this->selectedTask = $this->tasks->find($id);
-            $this->selectedName = $this->selectedTask->name ?? ' ';
-            $this->selectedDeleteStatus = $this->selectedTask->deleted_at ?? null;
-            $this->selectedImportant = $this->selectedTask->important ?? ' ';
+            $this->showTaskDetail();
         }
         if ($this->completedTasks->contains($id)) {
             $this->selectedTask = $this->completedTasks->find($id);
-            $this->selectedName = $this->selectedTask->name ?? ' ';
-            $this->selectedDeleteStatus = $this->selectedTask->deleted_at ?? ' ';
-            $this->selectedImportant = $this->selectedTask->important ?? ' ';
+            $this->showTaskDetail();
         }
     }
 
@@ -114,11 +125,11 @@ new class extends Component {
         $this->completedCount = $this->completedTasks->count();
     }
 
-    protected $listeners = ['reter' => '$refresh'];
-
     public function forceDelete()
     {
         $this->selectedTask->forceDelete();
+        $this->selectedTask = null;
+        $this->selectedTaskId = '';
         $this->reloadTask();
     }
     public function markComplete()
@@ -143,6 +154,7 @@ new class extends Component {
 };
 ?>
 <div x-data="{ showTask: false, deleteConfirm: false }">
+
     <div :class="{ 'w-[calc(100%-386px)] ': showTask }">
         <div class="px-3 py-2 bg-white  my-2 w-full rounded-lg shadow-lg">
             <form x wire:submit.prevent="submit" class="w-full py-2 shadow-lg">
@@ -172,7 +184,7 @@ new class extends Component {
                                 class="bg-white z-20 w-40 border rounded-sm mt-1.5 md:w-60"
                                 :class="{ '-ms-20': catalogueMenu, '-ms-7': !catalogueMenu }">
                                 <h5 class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600">Due</h5>
-                                <div class="p-0.5">
+                                <div class="p-0.5 ">
                                     <div @click="$wire.setDue('today'); dueDropdown = false;"
                                         class="py-2 text-center border-2 border-transparent hover:border-blue-800">
                                         Today
@@ -193,7 +205,7 @@ new class extends Component {
                                         </label>
                                         <input type="date" id="dateTest" x-ref="datepicker"
                                             @change="dueDropdown= false;" wire:model.live="date"
-                                            class="invisible h-[2px] bg-white w-full relative hover:border hover:border-blue-800 mt-2 p-2 border rounded shadow-md">
+                                            class="invisible h-0 absolute bottom-0">
                                     </div>
                                     @if (strlen($date) != 0)
                                         <div @click="dueDropdown = false;$wire.set('date', '')"
@@ -229,10 +241,15 @@ new class extends Component {
                                     <div @click="reminderDropdown = false;$wire.setReminder('next_week');"
                                         class="py-2 text-center border-2 border-transparent hover:border-blue-800">Next
                                         week</div>
-                                    <div @click="fp.open(); reminderDropdown = false"
-                                        class="py-2 text-center border-2 border-transparent hover:border-blue-800">Pick
-                                        a
-                                        date & time
+                                    <div>
+                                        <label for="reminderDate"
+                                            class="py-2 w-full block cursor-pointer text-center border-2 border-transparent hover:border-blue-800"
+                                            @click="$refs.reminderPicker.min = new Date().toISOString().slice(0, 16); $refs.reminderPicker.showPicker()">Pick
+                                            a
+                                            date & time</label>
+                                        <input type="datetime-local" id="reminderDate" wire:model="reminder"
+                                            @change="reminderDropdown = false;$wire.setReminder('picker')"
+                                            x-ref="reminderPicker" class="invisible h-0 absolute bottom-0">
                                     </div>
                                     @if (strlen($reminder) != 0)
                                         <div @click="reminderDropdown = false;$wire.set('reminder', '')"
@@ -246,19 +263,6 @@ new class extends Component {
                             {{ $reminder }}
                         </div>
                     </div>
-                    <input type="text" id="flatRemind" wire:model.live="reminder"
-                        class="placeholder:text-black w-[1px] h-[1px] bg-amber-600 invisible inline-block border-2  placeholder:text-center border-transparent active:ring-0 focus:ring-0">
-                    @once
-                        <script>
-                            let flatRemind = document.querySelector('#flatRemind');
-
-                            const fp = flatpickr(flatRemind, {
-                                enableTime: true,
-                                dateFormat: "Y-m-d H:i",
-                                minDate: "today"
-                            });
-                        </script>
-                    @endonce
 
                 </div>
 
@@ -272,7 +276,7 @@ new class extends Component {
         </div>
         <div>
             @foreach ($tasks as $task)
-                <livewire:partials.task :task="$task" :key="$task->id" />
+                <livewire:partials.task :task="$task" :key="$task->id" :selectedTaskId="$selectedTaskId" />
             @endforeach
         </div>
         @if ($completedTasks->count() > 0)
@@ -288,16 +292,24 @@ new class extends Component {
                 </div>
 
 
-                <div x-show="open" class="bg-gray-200 py-3 ">
+                <div x-show="open" class="py-0.5 bg-gray-200 rounded-b-lg">
+
                     @foreach ($completedTasks as $item)
-                        <div
-                            class="h-10 cursor-pointer bg-white px-3 py-2 flex items-center my-1.5 shadow-sm rounded-lg">
+                        <div @class([
+                            'h-10 cursor-pointer hover:bg-gray-300 px-3 py-2 flex items-center my-1.5 shadow-sm rounded-lg',
+                            'bg-gray-300' => $item->id == $selectedTask?->id,
+                            'bg-white' => $item->id != $selectedTask?->id,
+                        ])>
+
                             <span @click="$wire.restoreDelete({{ $item->id }})"
                                 class="w-4 h-4 shrink-0 leading-[13px] text-center  text-xs bg-blue-700  text-white inline-block rounded-full ">&check;
                             </span>
-                            <span @click="showTask = true; $wire.select({{ $item->id }})"
+                            <span @click="$wire.select({{ $item->id }});showTask = true; "
                                 class="line-through flex-1 text-gray-800 font-semibold ps-3">
                                 {{ $item->name }}
+                            </span>
+                            <span class="text-black" x-text="bgId">
+
                             </span>
                         </div>
                     @endforeach
@@ -305,10 +317,10 @@ new class extends Component {
             </div>
         @endif
     </div>
-    <div x-show="showTask">
-        @if ($selectedTask !== null)
-            <livewire:partials.show-task :name="$selectedName" :deleted_at="$selectedDeleteStatus" :important="$selectedImportant" />
-        @endif
+    <div x-show="showTask" class="relative">
+
+        <livewire:partials.show-task :id="$selectedTaskId" :key="implode('-', $keyHistory)" />
+
 
         {{-- <div>
             <div
