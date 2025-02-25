@@ -1,12 +1,12 @@
 <?php
 
 use Livewire\Volt\Component;
-use Livewire\Attributes\Reactive;
+
 use App\Models\Task;
+use App\Models\TaskBrief;
 use Carbon\Carbon;
 
 new class extends Component {
-    #[Reactive]
     public $id;
 
     public $name;
@@ -17,9 +17,12 @@ new class extends Component {
 
     public $task;
 
+    public $outline;
+    public $note;
+
     public function mount()
     {
-        $this->task = Task::withTrashed()->find($this->id);
+        $this->task = Task::withTrashed()->with('taskBriefs')->find($this->id);
         if ($this->task) {
             $this->fill($this->task->only('name', 'deleted_at', 'important', 'reminder', 'due'));
         } else {
@@ -82,32 +85,81 @@ new class extends Component {
         if ($dateString == 'next_week') {
             $this->reminder = Carbon::now()->addWeek()->toDateString();
         }
+        if ($dateString == 'picker') {
+            $this->reminder = Carbon::createFromFormat('Y-m-d\TH:i', $this->reminder)->format('Y-m-d H:i:s');
+        }
+        $this->task->reminder = $this->reminder;
+        $this->task->save();
+        $this->task->refresh();
+    }
+    public function addOutline()
+    {
+        $taskBrief = new TaskBrief();
+        $taskBrief->task_id = $this->id;
+        $taskBrief->outline = $this->outline;
+        $taskBrief->save();
+        return;
+    }
+    public function addNote()
+    {
+        $taskBrief = new TaskBrief();
+        $taskBrief->task_id = $this->id;
+        $taskBrief->note = $this->note;
+        $taskBrief->save();
+        $this->note = '';
+        return;
+    }
+    public function changeName()
+    {
+        $this->task->name = $this->name;
+        $this->task->save();
+        $this->dispatch('reload-task');
+        return;
+    }
+    public function testing()
+    {
+        dd($this->task);
     }
 };
 
 ?>
 
 <div>
-    <p class="text-white">this is show {{ $id }}</p>
-    <div
-        class="fixed top-[66px] shadow-lg right-0  overflow-y-scroll bg-white text-black w-96 max-h-[calc(100vh-112px)] h-[calc(100vh-112px)]">
-        <div class="w-full h-full">
 
+    <div
+        class="fixed top-[66px] shadow-lg right-0  overflow-y-auto  bg-white text-black w-full sm:w-72 md:w-80 lg:w-96 max-h-[calc(100vh-112px)] h-[calc(100vh-112px)]">
+        <div>
             <div wire:loading.remove
-                class="h-10 py-2 my-1 px-3 w-full rounded-lg shadow-sm cursor-pointer bg-white text-black  text-sm flex items-center justify-between gap-x-3">
+                class="h-14 py-2 my-1 px-3 w-full rounded-lg shadow-sm cursor-pointer bg-white text-black  text-sm flex items-center justify-between gap-x-3">
 
                 @if ($deleted_at === null)
                     <span wire:click="markComplete"
                         class="w-4 h-4 shrink-0 leading-[13px] text-center text-black/0 text-xs hover:text-blue-700 border cursor-pointer border-blue-600 inline-block rounded-full ">&check;
                     </span>
-                    <span class="text-gray-800 font-semibold ps-3 flex-1 text-center"> {{ $name }} </span>
+                    <div x-data="{ open: true }">
+                        <span x-cloak x-show="open" @click="open =false; setTimeout(()=>$refs.nameInput.focus(),50)"
+                            class=" text-gray-800 font-semibold ps-3 flex-1 text-center">
+                            {{ $name }}
+                        </span>
+                        <input x-cloak x-show="!open" class="border-0 focus:ring-0" onmousedown="return false;"
+                            onselectstart="return false;" wire:model="name"
+                            @keydown.enter="$wire.changeName(); open = true " x-ref="nameInput" type="text"
+                            value="{{ $name }}">
+                    </div>
                 @else
                     <span wire:click="unmarkComplete"
                         class="w-4 h-4 shrink-0 leading-[13px] text-center  text-xs bg-blue-700  text-white inline-block rounded-full ">&check;
                     </span>
-                    <span class="line-through text-gray-800 font-semibold ps-3 flex-1 text-center">
-                        {{ $name }}
-                    </span>
+                    <div x-data="{ open: true }">
+                        <span x-cloak x-show="open" @click="open =false; setTimeout(()=>$refs.nameInput.focus(),50)"
+                            class="line-through text-gray-800 font-semibold ps-3 flex-1 text-center">
+                            {{ $name }}
+                        </span>
+                        <input x-cloak x-show="!open" class="border-0 focus:ring-0" onmousedown="return false;"
+                            onselectstart="return false;" wire:model="name"
+                            @keydown.enter="$wire.changeName(); open = true " x-ref="nameInput" type="text"
+                            value="{{ $name }}">
+                    </div>
                 @endif
 
                 <span class="text-blue-700 ">
@@ -128,8 +180,8 @@ new class extends Component {
                 </span>
             </div>
 
-            <div class="flex items-center justify-center w-full py-2">
-                <div wire:loading role="status">
+            <div class="flex items-center justify-center w-full my-1 ">
+                <div wire:loading role="status" class="h-15 py-4 flex items-center justify-center">
                     <svg aria-hidden="true" class="w-5 h-5  text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
                         viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -139,15 +191,53 @@ new class extends Component {
                             d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
                             fill="currentFill" />
                     </svg>
-                    <span class="sr-only">Loading...</span>
+
                 </div>
             </div>
 
-            <div x-data="{ dueDropdown: false, reminderDropdown: false }" class="h-full">
-                <ul>
+            <div x-data="{ display: true, action: false, inputValue: '' }" class=" py-3 px-3  cursor-pointer ">
+                <div class="flex items-center justify-between  gap-x-2 w-full border shadow-lg p-2 ">
+                    <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-6 w-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </span>
+                    <input type="text" wire:model="outline" x-model="inputValue" x-ref="actionInput"
+                        class="border-0 flex-1 focus:ring-0 placeholder:text-blue-600 focus:placeholder:text-gray-400"
+                        placeholder="Add Outline">
+                    <button @click="$wire.addOutline(); inputValue = ''"
+                        class="min-w-16 py-1.5 rounded-lg border border-gray-300 cursor-pointer"
+                        :disabled="!inputValue.trim()" :class="!inputValue.trim() ? 'invisible' : ''">Add</button>
+                </div>
+                @isset($task->taskBriefs)
+                    @if ($task->taskBriefs->count() > 0)
+                        <div class="mt-2" x-data="dropdown">
+                            <div @click="toggle()" class="p-2 shadow-lg border rounded-lg">
+                                <span :class="{ 'rotate-90 translate-y-0.5 ': open, }"
+                                    class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
+                                {{ "$name's outlines" }}
+                            </div>
+                            <div x-show="open" class="p-2">
+                                @foreach ($task->taskBriefs as $item)
+                                    <p class="p-1">{{ $item->outline }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endisset
+            </div>
+
+            <div>
+
+
+
+            </div>
+
+
+            <div x-data="{ dueDropdown: false, reminderDropdown: false }">
+                <ul class="space-y-1">
                     <li>
-                        <div
-                            class="flex items-center gap-x-0.5 py-2 px-1 border bg-gray-500 border-gray-300 cursor-pointer">
+                        <div class="flex items-center gap-x-0.5 py-3 px-3 border  border-gray-300 cursor-pointer">
                             <div class="h-5 w-5 cursor-pointer relative">
                                 <svg @click="dueDropdown = !dueDropdown; reminderDropdown = false"
                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -188,12 +278,12 @@ new class extends Component {
                                 </div>
                             </div>
 
-                            <div @click="dueDropdown = !dueDropdown; reminderDropdown = false" class="ps-3">
-                                {{ $due ? $due : '' }}</div>
+                            <div @click="dueDropdown = !dueDropdown; reminderDropdown = false" class="ps-3 flex-1">
+                                {{ $due ? $due : 'Add due date' }}</div>
                         </div>
                     </li>
                     <li>
-                        <div class="flex items-center gap-x-0.5 py-0.5 px-1 border border-gray-300 cursor-pointer">
+                        <div class="flex items-center gap-x-0.5 py-3 px-3 border border-gray-300 cursor-pointer">
                             <div class="h-5 w-5 cursor-pointer relative">
                                 <svg @click="reminderDropdown = !reminderDropdown; dueDropdown = false"
                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -218,11 +308,15 @@ new class extends Component {
                                             class="py-2 text-center border-2 border-transparent hover:border-blue-800">
                                             Next
                                             week</div>
-                                        <div @click="fpkr.open(); reminderDropdown = false"
-                                            class="py-2 text-center border-2 border-transparent hover:border-blue-800">
-                                            Pick
-                                            a
-                                            date & time
+                                        <div>
+                                            <label for="reminderDate"
+                                                class="py-2 w-full block cursor-pointer text-center border-2 border-transparent hover:border-blue-800"
+                                                @click="$refs.reminderPicker.min = new Date().toISOString().slice(0, 16); $refs.reminderPicker.showPicker()">Pick
+                                                a
+                                                date & time</label>
+                                            <input type="datetime-local" id="reminderDate" wire:model="reminder"
+                                                @change="reminderDropdown = false;$wire.setReminder('picker')"
+                                                x-ref="reminderPicker" class="invisible h-0 absolute bottom-0">
                                         </div>
                                         @if (strlen($reminder) != 0)
                                             <div @click="reminderDropdown = false;$wire.set('reminder', '')"
@@ -233,7 +327,7 @@ new class extends Component {
                                 </div>
                             </div>
                             <div @click="reminderDropdown= !reminderDropdown ; dueDropdown = false" class="ps-3">
-                                {{ $reminder ? $reminder : '' }}
+                                {{ $reminder ? $reminder : 'Remind me' }}
                             </div>
                         </div>
 
@@ -242,11 +336,40 @@ new class extends Component {
                 </ul>
 
             </div>
+
+            <div class="mt-1" x-data="{ noteValue: '' }">
+
+                <textarea id="" cols="10" rows="2" placeholder="Add note" wire:model="note"
+                    x-model="noteValue"
+                    class="w-full resize-none border-gray-300 focus:ring-0 placeholder:text-sm placeholder:text-blue-600 focus:placeholder:text-gray-400
+                     focus:border-gray-400 active:border-gray-400"></textarea>
+                <div class="flex w-full justify-end">
+                    <button @click="$wire.addNote(); noteValue = ''" :disabled="!noteValue.trim()"
+                        class="p-2 rounded-lg shadow-lg border cursor-pointer disabled:hidden">Add</button>
+                </div>
+
+                @isset($task->taskBriefs)
+                    @if ($task->taskBriefs->count() > 0 && $task->taskBriefs->contains(fn($brief) => !empty($brief->note)))
+                        <div x-data="dropdown" class="p-2">
+                            <div @click="toggle()" class="p-2 shadow-lg border rounded-lg">
+                                <span :class="{ 'rotate-90 translate-y-0.5 ': open, }"
+                                    class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
+                                note list
+                            </div>
+                            <div x-show="open" class="p-2">
+                                @foreach ($task->taskBriefs as $item)
+                                    <p class="p-1">{{ $item->note }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endisset
+            </div>
         </div>
 
     </div>
-    <div class="fixed right-0 bottom-0 bg-white w-96 h-12 ">
-        <div class="flex justify-between items-center px-2 py-2 dark:text-black">
+    <div class="fixed right-0 bottom-0 bg-white border-t w-full sm:w-72 md:w-80   lg:w-96 h-14 flex items-center">
+        <div class="my-auto flex justify-between items-center px-2 py-2 dark:text-black w-full">
             <span @click="showTask = false"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 cursor-pointer">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -277,6 +400,23 @@ new class extends Component {
             </span>
 
 
+        </div>
+    </div>
+    <div x-show="deleteConfirm" class="fixed inset-0 bg-gray-200/20 flex items-center justify-center">
+        <div class="bg-white w-80 dark:text-black border shadow-lg h-40">
+            <h1 class="p-2 my-1"> some tent</h1>
+            <p class="p-2 text-gray-700 text-xs">You won't be able to undo this action.</p>
+            <div class="flex justify-end mt-4">
+                <div class="flex px-2  ">
+                    <button @click="deleteConfirm = false"
+                        class="p-2 bg-gray-100 hover:border-gray-700 border border-transparent  rounded-lg cursor-pointer  mx-2">Cancel</button>
+                    <button
+                        @click="deleteConfirm = false;showTask = false; $wire.$parent.forceDelete({{ $id }});"
+                        class="p-2 bg-red-600 font-semibold text-white  rounded-lg cursor-pointer mx-2">Delete
+                        task</button>
+
+                </div>
+            </div>
         </div>
     </div>
 </div>

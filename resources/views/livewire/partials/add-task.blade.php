@@ -21,10 +21,9 @@ new class extends Component {
     public $completedCount;
     public $selectedTask;
     public $selectedTaskId;
-    public $selectedName;
-    public $selectedDeleteStatus;
-    public $selectedImportant;
+
     public $keyHistory = [];
+    public $keyTasks = [];
 
     public function mount()
     {
@@ -33,6 +32,7 @@ new class extends Component {
         $this->completedTasks = $this->catalogue->tasks()->onlyTrashed()->get();
         $this->completedCount = $this->completedTasks->count();
         $this->keyHistory[] = 1;
+        $this->keyTasks = $this->tasks->pluck('id');
     }
     public function setDue($dateString)
     {
@@ -73,12 +73,13 @@ new class extends Component {
         if ($this->reminder) {
             $task->reminder = $this->reminder;
         }
-        $this->catalogue->tasks()->save($task);
+        $task = $this->catalogue->tasks()->save($task);
         $this->catalogue->refresh();
         $this->name = '';
         $this->date = '';
         $this->reminder = '';
         $this->tasks = $this->catalogue->tasks;
+        $this->keyTasks[] = $task->id;
     }
     #[On('soft-deleted')]
     public function updateTask($id)
@@ -106,13 +107,24 @@ new class extends Component {
     #[On('select')]
     public function select($id)
     {
+        $this->keyTasks = $this->tasks->pluck('id');
         if ($this->tasks->contains($id)) {
+            $this->selectedTaskId = null;
             $this->selectedTask = $this->tasks->find($id);
-            $this->showTaskDetail();
+            $index = $this->keyTasks->search($id);
+            $this->keyTasks[$index] = $id . 're';
+            $this->selectedTaskId = $this->selectedTask->id ?? '';
+            $this->keyHistory[] = $this->selectedTaskId;
         }
         if ($this->completedTasks->contains($id)) {
+            if ($this->keyTasks->contains($this->selectedTaskId)) {
+                $index = $this->keyTasks->search($this->selectedTaskId);
+                $this->selectedTaskId = null;
+                $this->keyTasks[$index] = $id . 're';
+            }
             $this->selectedTask = $this->completedTasks->find($id);
-            $this->showTaskDetail();
+            $this->selectedTaskId = $this->selectedTask->id ?? '';
+            $this->keyHistory[] = $this->selectedTaskId;
         }
     }
 
@@ -121,47 +133,45 @@ new class extends Component {
     {
         $this->catalogue->refresh();
         $this->tasks = $this->catalogue->tasks;
+        $this->keyTasks = $this->tasks->pluck('id');
         $this->completedTasks = $this->catalogue->tasks()->onlyTrashed()->get();
         $this->completedCount = $this->completedTasks->count();
     }
 
-    public function forceDelete()
-    {
-        $this->selectedTask->forceDelete();
-        $this->selectedTask = null;
-        $this->selectedTaskId = '';
-        $this->reloadTask();
-    }
-    public function markComplete()
-    {
-        $this->selectedTask->delete();
-        $this->reloadTask();
-        $this->selectedDeleteStatus = $this->selectedTask->deleted_at;
-    }
-    public function unmarkComplete()
-    {
-        $this->selectedTask->restore();
-        $this->reloadTask();
-        $this->selectedDeleteStatus = $this->selectedTask->deleted_at ?? null;
-    }
     public function markImportant()
     {
         $this->selectedTask->important = !$this->selectedTask->important;
         $this->selectedTask->save();
         $this->selectedTask->refresh();
-        $this->selectedImportant = $this->selectedTask->important ?? ' ';
+    }
+    public function forceDelete($id)
+    {
+        $this->selectedTask = null;
+
+        $del = Task::where('id', $id)->withTrashed()->forceDelete();
+
+        if ($del == 1) {
+            $this->reloadTask();
+        }
+        return;
+    }
+    public function move()
+    {
+        dd('moeve');
     }
 };
 ?>
 <div x-data="{ showTask: false, deleteConfirm: false }">
 
-    <div :class="{ 'w-[calc(100%-386px)] ': showTask }">
+    <div :class="{ 'w-[calc(100%-288px)] md:w-[calc(100%-320px)] lg:w-[calc(100%-386px)]': showTask }">
         <div class="px-3 py-2 bg-white  my-2 w-full rounded-lg shadow-lg">
+
             <form x wire:submit.prevent="submit" class="w-full py-2 shadow-lg">
-                <div class="w-full flex items-center">
+                <div class="w-full flex items-center ">
                     <span class="w-4 h-4 shrink-0 border border-blue-600 inline-block rounded-full"></span>
                     <input type="text" placeholder="Add a task" wire:model="name"
-                        class="border-none text-[15px] focus:ring-0 h-8 flex-1 dark:text-black placeholder:text-blue-800 focus:placeholder:text-gray-900">
+                        :class="showTask ? 'sm:flex-1 w-32' : ''"
+                        class="border-none text-[15px] focus:ring-0 h-8 flex-1  dark:text-black placeholder:text-blue-800 focus:placeholder:text-gray-900">
                     @error('name')
                         <p class="text-red-600">{{ $message }}</p>
                     @enderror
@@ -275,16 +285,17 @@ new class extends Component {
             </div>
         </div>
         <div>
-            @foreach ($tasks as $task)
-                <livewire:partials.task :task="$task" :key="$task->id" :selectedTaskId="$selectedTaskId" />
+            @foreach ($tasks as $key => $task)
+                <livewire:partials.task :task="$task" :key="$keyTasks[$key] . $task->name" :selectedTaskId="$selectedTaskId" />
             @endforeach
         </div>
         @if ($completedTasks->count() > 0)
             <div x-data="dropdown">
                 <div @click="toggle()" :class="{ 'rounded-b-lg': !open }"
                     class="w-full h-10 bg-gray-200 rounded-t-lg select-none text-black cursor-pointer leading-10 px-3 font-semibold text-sm border-b">
-                    <span :class="{ 'rotate-90 mt-1': open, }"
-                        class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl ">&gt;</span>
+                    <span :class="{ 'rotate-90 translate-y-0.5': open, }"
+                        class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl
+                        transition-transform duration-500 ease-in-out">&gt;</span>
                     Completed
                     <span class="text-gray-800">
                         {{ $completedCount }}
@@ -304,7 +315,8 @@ new class extends Component {
                             <span @click="$wire.restoreDelete({{ $item->id }})"
                                 class="w-4 h-4 shrink-0 leading-[13px] text-center  text-xs bg-blue-700  text-white inline-block rounded-full ">&check;
                             </span>
-                            <span @click="$wire.select({{ $item->id }});showTask = true; "
+                            <span
+                                @click="$wire.select({{ $item->id }});showTask = true; $dispatch('remove-profile') "
                                 class="line-through flex-1 text-gray-800 font-semibold ps-3">
                                 {{ $item->name }}
                             </span>
@@ -317,132 +329,11 @@ new class extends Component {
             </div>
         @endif
     </div>
-    <div x-show="showTask" class="relative">
+    <div x-show="showTask" class="relative" @remove-menu.window="showTask = false">
 
         <livewire:partials.show-task :id="$selectedTaskId" :key="implode('-', $keyHistory)" />
 
-
-        {{-- <div>
-            <div
-                class="fixed top-[66px] shadow-lg right-0  overflow-y-scroll bg-white text-black w-96 max-h-[calc(100vh-112px)] h-[calc(100vh-112px)]">
-                <div class="w-full h-full">
-                    @if (isset($selectedTask))
-                        <div wire:loading.remove
-                            class="h-10 py-2 my-1 px-3 w-full rounded-lg shadow-sm cursor-pointer bg-white text-black  text-sm flex items-center justify-between gap-x-3">
-                            @if ($selectedTask->deleted_at === null)
-                                <span wire:click="markComplete()"
-                                    class="w-4 h-4 shrink-0 leading-[13px] text-center text-black/0 text-xs hover:text-blue-700 border cursor-pointer border-blue-600 inline-block rounded-full ">&check;
-                                </span>
-                                <span class="text-gray-800 font-semibold ps-3"> {{ $selectedTask?->name }} </span>
-                            @else
-                                <span wire:click="unmarkComplete()"
-                                    class="w-4 h-4 shrink-0 leading-[13px] text-center  text-xs bg-blue-700  text-white inline-block rounded-full ">&check;
-                                </span>
-                                <span class="line-through text-gray-800 font-semibold ps-3">
-                                    {{ $selectedTask?->name }}
-                                </span>
-                            @endif
-                            <span class="text-blue-700 ">
-                                @if ($selectedTask->important === 1)
-                                    <svg wire:click="markImportant()" xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-                                        <path fill-rule="evenodd"
-                                            d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                @else
-                                    <svg wire:click="markImportant()" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                        class="h-5 w-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                                    </svg>
-                                @endif
-                            </span>
-                        </div>
-
-                    @endif
-
-                    <div class="flex items-center justify-center w-full py-2">
-                        <div wire:loading role="status">
-                            <svg aria-hidden="true"
-                                class="w-5 h-5  text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                                viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                                    fill="currentColor" />
-                                <path
-                                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                                    fill="currentFill" />
-                            </svg>
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </div>
-
-                    <div x-data class="h-full">
-                        <ul>
-
-                            <template x-for="i in 2">
-                                <li x-text="i"></li>
-                            </template>
-                        </ul>
-                    </div>
-                </div>
-
-            </div>
-            <div class="fixed right-0 bottom-0 bg-white w-96 h-12 ">
-                <div class="flex justify-between items-center px-2 py-2 dark:text-black">
-                    <span @click="showTask = false"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                            class="h-5 w-5 cursor-pointer">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
-                        </svg>
-                    </span>
-                    <span class="font-semibold text-gray-800">Created Today</span>
-                    <span>
-                        <svg wire:loading.remove @click="deleteConfirm = true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                            class="h-5 w-5 cursor-pointer">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                        </svg>
-                        <div wire:loading role="status">
-                            <svg aria-hidden="true"
-                                class="w-5 h-5  text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                                viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                                    fill="currentColor" />
-                                <path
-                                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                                    fill="currentFill" />
-                            </svg>
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </span>
-
-
-                </div>
-            </div>
-        </div> --}}
-
     </div>
-    <div x-show="deleteConfirm" class="absolute inset-0 bg-gray-200/20 flex items-center justify-center">
-        <div class="bg-white w-80 dark:text-black border shadow-lg h-40">
-            <h1 class="p-2 my-1"> some tent</h1>
-            <p class="p-2 text-gray-700 text-xs">You won't be able to undo this action.</p>
-            <div class="flex justify-end mt-4">
-                <div class="flex px-2  ">
-                    <button @click="deleteConfirm = false"
-                        class="p-2 bg-gray-100 hover:border-gray-700 border border-transparent  rounded-lg cursor-pointer  mx-2">Cancel</button>
-                    <button @click="deleteConfirm = false;showTask = false; $wire.forceDelete()"
-                        class="p-2 bg-red-600 font-semibold text-white  rounded-lg cursor-pointer mx-2">Delete
-                        task</button>
 
-                </div>
-            </div>
-        </div>
-    </div>
 
 </div>

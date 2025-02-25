@@ -9,9 +9,6 @@
     <title>Sylla To Do</title>
 
     <link rel="shortcut icon" href="./storage/photos/rightArrow.png" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -31,9 +28,12 @@
         @endif
 
         <!-- Page Content -->
-        <main class="flex ">
-            <section x-data="{ open: true }" x-show="open" class=" dark:text-white sm:w-60 lg:w-72 ">
-                <div @click="open = false ; $dispatch('enlarge')"
+        <main class=" lg:flex " x-data="{ open: false }" x-init=" window.addEventListener('resize', () => {
+             open = window.innerWidth >= 1024;
+         });" @remove-menu.window="open = false">
+            <section x-show="open"
+                class=" dark:text-white w-48 sm:w-60 lg:w-72 max-lg:fixed left-0 top-[66px] z-50 bg-gray-900 h-[calc(100vh-66px)] ">
+                <div @click="open = false ; $dispatch('enlarge'); "
                     class="dark:text-white cursor-pointer py-2 ps-6  w-14 h-14">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="w-full h-full">
@@ -47,7 +47,7 @@
                     <x-menu-item name="Routine" direct="routine" />
 
                 </div>
-                <template x-teleport='.destination' @click="open = true; $dispatch('shrink')">
+                <template x-teleport='.destination' @click="open = true; $dispatch('shrink');">
                     <div x-show="!open" class="dark:text-white cursor-pointer py-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="size-6">
@@ -57,7 +57,8 @@
                     </div>
                 </template>
             </section>
-            <section class="dark:text-white p-4 flex-1  bg-gray-100 dark:bg-gray-900">
+            <section :class="open ? 'max-lg:invisible' : ''"
+                class="dark:text-white p-4 flex-1  bg-gray-100 dark:bg-gray-900">
                 <div class="flex items-center mb-6">
                     <div class="destination"></div>
                     @if (isset($pageTitleBar))

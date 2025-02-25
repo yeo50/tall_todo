@@ -27,6 +27,7 @@ new class extends Component {
 }; ?>
 
 <nav x-data="{
+    open: false,
     darkMode: localStorage.getItem('darkMode') === 'true',
     toggleDark() {
         this.darkMode = !this.darkMode;
@@ -37,7 +38,7 @@ new class extends Component {
             document.documentElement.classList.remove('dark');
         }
     }
-}" x-init="if (darkMode) document.documentElement.classList.add('dark')"
+}" x-init="if (darkMode) document.documentElement.classList.add('dark')" @shrink.window="open = false" @remove-profile.window="open =false"
     class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -109,7 +110,7 @@ new class extends Component {
                 </div>
                 <!-- Hamburger -->
                 <div class="-me-2 flex items-center sm:hidden">
-                    <button @click="open = ! open"
+                    <button @click="open = ! open; if(open) $dispatch('remove-menu')"
                         class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
                         <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                             <path :class="{ 'hidden': open, 'inline-flex': !open }" class="inline-flex"
@@ -127,11 +128,7 @@ new class extends Component {
 
     <!-- Responsive Navigation Menu -->
     <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-        </div>
+
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
