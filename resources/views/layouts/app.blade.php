@@ -32,7 +32,7 @@
              open = window.innerWidth >= 1024;
          });" @remove-menu.window="open = false">
             <section x-show="open"
-                class=" dark:text-white w-48 sm:w-60 lg:w-72 max-lg:fixed left-0 top-[66px] z-50 bg-gray-900 h-[calc(100vh-66px)] ">
+                class=" dark:text-white w-48 sm:w-60 lg:w-72 max-lg:fixed left-0 top-[66px] z-50 bg-white dark:bg-gray-900 h-[calc(100vh-66px)] ">
                 <div @click="open = false ; $dispatch('enlarge'); "
                     class="dark:text-white cursor-pointer py-2 ps-6  w-14 h-14">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

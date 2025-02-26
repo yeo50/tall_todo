@@ -16,9 +16,10 @@ new class extends Component {
 };
 ?>
 <div @class([
-    'py-2 my-1 px-3 w-full  rounded-lg shadow-sm cursor-pointer  text-black  text-sm flex items-center gap-x-3',
-    'bg-gray-300' => $task->id == $selectedTaskId,
-    'bg-white' => $task->id != $selectedTaskId,
+    'py-2 my-1 px-3 w-full  rounded-lg shadow-sm cursor-pointer  text-black hover:bg-gray-200 dark:hover:bg-gray-700   text-sm flex items-center gap-x-3',
+    'bg-gray-300 dark:bg-gray-700 dark:text-white' =>
+        $task->id == $selectedTaskId,
+    'bg-white dark:bg-gray-800 dark:text-white' => $task->id != $selectedTaskId,
 ])>
     <span wire:click="softDelete( {{ $task->id }} )"
         class="w-4 h-4 shrink-0 leading-[13px] text-center text-black/0 text-xs hover:text-blue-700 border cursor-pointer border-blue-600 inline-block rounded-full ">&check;

@@ -56,6 +56,7 @@ new class extends Component {
         $this->task->save();
         $this->task->refresh();
         $this->important = $this->task->important;
+        $this->dispatch('load-important');
     }
 
     public function setDue($dateString)
@@ -127,10 +128,10 @@ new class extends Component {
 <div>
 
     <div
-        class="fixed top-[66px] shadow-lg right-0  overflow-y-auto  bg-white text-black w-full sm:w-72 md:w-80 lg:w-96 max-h-[calc(100vh-112px)] h-[calc(100vh-112px)]">
+        class="fixed top-[66px] shadow-lg right-0  overflow-y-auto  bg-white text-black dark:bg-gray-800 dark:text-white w-full sm:w-72 md:w-80 lg:w-96 max-h-[calc(100vh-112px)] h-[calc(100vh-112px)]">
         <div>
             <div wire:loading.remove
-                class="h-14 py-2 my-1 px-3 w-full rounded-lg shadow-sm cursor-pointer bg-white text-black  text-sm flex items-center justify-between gap-x-3">
+                class="h-14 py-2 my-1 px-3 w-full rounded-lg shadow-sm cursor-pointer bg-white text-black dark:bg-gray-800 dark:text-white text-sm flex items-center justify-between gap-x-3">
 
                 @if ($deleted_at === null)
                     <span wire:click="markComplete"
@@ -138,11 +139,11 @@ new class extends Component {
                     </span>
                     <div x-data="{ open: true }">
                         <span x-cloak x-show="open" @click="open =false; setTimeout(()=>$refs.nameInput.focus(),50)"
-                            class=" text-gray-800 font-semibold ps-3 flex-1 text-center">
+                            class="  font-semibold ps-3 flex-1 text-center">
                             {{ $name }}
                         </span>
-                        <input x-cloak x-show="!open" class="border-0 focus:ring-0" onmousedown="return false;"
-                            onselectstart="return false;" wire:model="name"
+                        <input x-cloak x-show="!open" class="border-0 focus:ring-0 dark:bg-gray-800 dark:text-white"
+                            onmousedown="return false;" onselectstart="return false;" wire:model="name"
                             @keydown.enter="$wire.changeName(); open = true " x-ref="nameInput" type="text"
                             value="{{ $name }}">
                     </div>
@@ -152,11 +153,11 @@ new class extends Component {
                     </span>
                     <div x-data="{ open: true }">
                         <span x-cloak x-show="open" @click="open =false; setTimeout(()=>$refs.nameInput.focus(),50)"
-                            class="line-through text-gray-800 font-semibold ps-3 flex-1 text-center">
+                            class="line-through  font-semibold ps-3 flex-1 text-center">
                             {{ $name }}
                         </span>
-                        <input x-cloak x-show="!open" class="border-0 focus:ring-0" onmousedown="return false;"
-                            onselectstart="return false;" wire:model="name"
+                        <input x-cloak x-show="!open" class="border-0 focus:ring-0 dark:bg-gray-800 dark:text-white"
+                            onmousedown="return false;" onselectstart="return false;" wire:model="name"
                             @keydown.enter="$wire.changeName(); open = true " x-ref="nameInput" type="text"
                             value="{{ $name }}">
                     </div>
@@ -196,14 +197,14 @@ new class extends Component {
             </div>
 
             <div x-data="{ display: true, action: false, inputValue: '' }" class=" py-3 px-3  cursor-pointer ">
-                <div class="flex items-center justify-between  gap-x-2 w-full border shadow-lg p-2 ">
+                <div class="flex items-center justify-between  gap-x-2 w-full border rounded-lg shadow-lg p-2 ">
                     <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="h-6 w-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                     </span>
                     <input type="text" wire:model="outline" x-model="inputValue" x-ref="actionInput"
-                        class="border-0 flex-1 focus:ring-0 placeholder:text-blue-600 focus:placeholder:text-gray-400"
+                        class="border-0 flex-1 focus:ring-0 placeholder:text-blue-600 dark:bg-gray-800  focus:placeholder:text-gray-400"
                         placeholder="Add Outline">
                     <button @click="$wire.addOutline(); inputValue = ''"
                         class="min-w-16 py-1.5 rounded-lg border border-gray-300 cursor-pointer"
@@ -214,12 +215,12 @@ new class extends Component {
                         <div class="mt-2" x-data="dropdown">
                             <div @click="toggle()" class="p-2 shadow-lg border rounded-lg">
                                 <span :class="{ 'rotate-90 translate-y-0.5 ': open, }"
-                                    class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
+                                    class="text-gray-600 dark:text-gray-400 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
                                 {{ "$name's outlines" }}
                             </div>
                             <div x-show="open" class="p-2">
-                                @foreach ($task->taskBriefs as $item)
-                                    <p class="p-1">{{ $item->outline }}</p>
+                                @foreach ($task->taskBriefs as $key => $item)
+                                    <p class="p-1">{{ $key + 1 }} {{ $item->outline }}</p>
                                 @endforeach
                             </div>
                         </div>
@@ -246,9 +247,10 @@ new class extends Component {
                                         d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
                                 </svg>
                                 <div x-show="dueDropdown" x-cloak
-                                    class="bg-white z-20 w-40 border rounded-sm mt-1.5 md:w-60"
-                                    :class="{ '-ms-20': catalogueMenu, '-ms-7': !catalogueMenu }">
-                                    <h5 class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600">Due</h5>
+                                    class="bg-white dark:bg-gray-800 dark:text-white z-20 w-40 md:w-48 lg:w-60 border rounded-sm absolute -top-[100px] left-[60px] lg:left-[100px]  ">
+                                    <h5
+                                        class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                        Due</h5>
                                     <div class="p-0.5">
                                         <div @click="$wire.setDue('today'); dueDropdown = false;"
                                             class="py-2 text-center border-2 border-transparent hover:border-blue-800">
@@ -287,12 +289,12 @@ new class extends Component {
                             <div class="h-5 w-5 cursor-pointer relative">
                                 <svg @click="reminderDropdown = !reminderDropdown; dueDropdown = false"
                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="h-full w-full">
+                                    stroke-width="1.5" stroke="currentColor" class="h-full  w-full">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                                 </svg>
                                 <div x-show="reminderDropdown"
-                                    class="bg-white z-30 w-40 text-center border rounded-sm  mt-1.5 md:w-60">
+                                    class="bg-white dark:bg-gray-800 dark:text-white  z-10 w-40 md:w-48 lg:w-60 text-center border rounded-sm  absolute -top-[100px] left-[60px] lg:left-[100px] ">
                                     <h5 class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600">Reminder
                                     </h5>
                                     <div class="p-0.5">
@@ -341,7 +343,7 @@ new class extends Component {
 
                 <textarea id="" cols="10" rows="2" placeholder="Add note" wire:model="note"
                     x-model="noteValue"
-                    class="w-full resize-none border-gray-300 focus:ring-0 placeholder:text-sm placeholder:text-blue-600 focus:placeholder:text-gray-400
+                    class="w-full resize-none border-gray-300 dark:bg-gray-800 dark:text-white focus:ring-0 placeholder:text-sm placeholder:text-blue-600 focus:placeholder:text-gray-400
                      focus:border-gray-400 active:border-gray-400"></textarea>
                 <div class="flex w-full justify-end">
                     <button @click="$wire.addNote(); noteValue = ''" :disabled="!noteValue.trim()"
@@ -353,7 +355,7 @@ new class extends Component {
                         <div x-data="dropdown" class="p-2">
                             <div @click="toggle()" class="p-2 shadow-lg border rounded-lg">
                                 <span :class="{ 'rotate-90 translate-y-0.5 ': open, }"
-                                    class="text-gray-600 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
+                                    class="text-gray-600 dark:text-gray-400 inline-flex w-fit items-center justify-center leading-none  font-semibold text-xl  transition-transform duration-500 ease-in-out ">&gt;</span>
                                 note list
                             </div>
                             <div x-show="open" class="p-2">
@@ -368,15 +370,16 @@ new class extends Component {
         </div>
 
     </div>
-    <div class="fixed right-0 bottom-0 bg-white border-t w-full sm:w-72 md:w-80   lg:w-96 h-14 flex items-center">
-        <div class="my-auto flex justify-between items-center px-2 py-2 dark:text-black w-full">
+    <div
+        class="fixed right-0 bottom-0 bg-white dark:bg-gray-800 dark:text-white border-t w-full sm:w-72 md:w-80   lg:w-96 h-14 flex items-center">
+        <div class="my-auto flex justify-between items-center px-2 py-2 text-black dark:text-white w-full">
             <span @click="showTask = false"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 cursor-pointer">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
                 </svg>
             </span>
-            <span class="font-semibold text-gray-800">Created Today</span>
+            <span class="font-semibold text-gray-800 dark:bg-gray-800 dark:text-white">Created Today</span>
             <span>
                 <svg wire:loading.remove @click="deleteConfirm = true" xmlns="http://www.w3.org/2000/svg"
                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
@@ -403,9 +406,9 @@ new class extends Component {
         </div>
     </div>
     <div x-show="deleteConfirm" class="fixed inset-0 bg-gray-200/20 flex items-center justify-center">
-        <div class="bg-white w-80 dark:text-black border shadow-lg h-40">
-            <h1 class="p-2 my-1"> some tent</h1>
-            <p class="p-2 text-gray-700 text-xs">You won't be able to undo this action.</p>
+        <div class="bg-white w-80 flex flex-col justify-evenly dark:text-black border shadow-lg h-40">
+
+            <p class="p-2 text-gray-700 text-xs text-center">You won't be able to undo this action.</p>
             <div class="flex justify-end mt-4">
                 <div class="flex px-2  ">
                     <button @click="deleteConfirm = false"
