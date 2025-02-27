@@ -37,7 +37,7 @@ class CatalogueController extends Controller
      */
     public function show(Catalogue $catalogue)
     {
-        //
+        return view('catalogues.show', ['catalogue' => $catalogue]);
     }
 
     /**

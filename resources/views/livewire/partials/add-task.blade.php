@@ -225,7 +225,7 @@ new class extends Component {
                             </svg>
                             <div x-show="dueDropdown" x-cloak
                                 class="bg-white dark:bg-gray-900 dark:text-white z-20 w-40 border rounded-sm mt-1.5 md:w-60"
-                                :class="{ '-ms-8': catalogueMenu, '-ms-12': !catalogueMenu }">
+                                :class="{ '-ms-5': catalogueMenu, '-ms-12': !catalogueMenu }">
                                 <h5
                                     class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600 dark:text-gray-400">
                                     Due</h5>
@@ -274,8 +274,10 @@ new class extends Component {
                             </svg>
                             <div x-show="reminderDropdown"
                                 class="bg-white dark:bg-gray-900 dark:text-white z-30 w-40 text-center border rounded-sm  mt-1.5 md:w-60"
-                                :class="{ '-ms-16': catalogueMenu, '-ms-14': !catalogueMenu }">
-                                <h5 class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600">Reminder</h5>
+                                :class="{ '-ms-5': catalogueMenu, '-ms-14': !catalogueMenu }">
+                                <h5
+                                    class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600 dark:text-gray-400">
+                                    Reminder</h5>
                                 <div class="p-0.5 bg-white dark:bg-gray-900">
                                     <div @click="reminderDropdown = false;$wire.setReminder('today');"
                                         class="py-2 text-center border-2 border-transparent hover:border-blue-800">Later

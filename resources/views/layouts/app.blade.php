@@ -41,12 +41,8 @@
                             d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                 </div>
-                <div class="flex flex-col ">
-                    <x-menu-item name="Work" direct="work" />
-                    <x-menu-item name="Important" direct="important" />
-                    <x-menu-item name="Routine" direct="routine" />
 
-                </div>
+                <livewire:partials.catalogue-menu />
                 <template x-teleport='.destination' @click="open = true; $dispatch('shrink');">
                     <div x-show="!open" class="dark:text-white cursor-pointer py-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -62,7 +58,7 @@
                 <div class="flex items-center mb-6">
                     <div class="destination"></div>
                     @if (isset($pageTitleBar))
-                        <div class="ps-4 text-2xl font-bold dark:text-white">
+                        <div class="ps-4 text-2xl font-bold dark:text-white capitalize">
                             {{ $pageTitleBar }}
                         </div>
                     @endif

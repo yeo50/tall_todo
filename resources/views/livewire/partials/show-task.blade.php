@@ -272,9 +272,13 @@ new class extends Component {
                                             </label>
                                             <input type="date" id="dateTest" x-ref="datepicker"
                                                 @change="dueDropdown= false; $wire.setDue('custom')"
-                                                wire:model.live="due"
-                                                class="invisible h-[2px] bg-white w-full relative hover:border hover:border-blue-800 mt-2 p-2 border rounded shadow-md">
+                                                wire:model.live="due" class="invisible h-0  absolute bottom-0">
                                         </div>
+                                        @if (strlen($reminder) != 0)
+                                            <div @click="dueDropdown = false;$wire.set('due', '')"
+                                                class="py-2 text-center border-2 border-transparent text-red-600 hover:border-red-500">
+                                                Remove due date</div>
+                                        @endif
 
                                     </div>
                                 </div>
@@ -295,7 +299,9 @@ new class extends Component {
                                 </svg>
                                 <div x-show="reminderDropdown"
                                     class="bg-white dark:bg-gray-800 dark:text-white  z-10 w-40 md:w-48 lg:w-60 text-center border rounded-sm  absolute -top-[100px] left-[60px] lg:left-[100px] ">
-                                    <h5 class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600">Reminder
+                                    <h5
+                                        class="text-center py-2 shadow-lg mb-1 font-semibold text-gray-600 dark:text-gray-400">
+                                        Reminder
                                     </h5>
                                     <div class="p-0.5">
                                         <div @click="reminderDropdown = false;$wire.setReminder('today');"
