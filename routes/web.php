@@ -8,16 +8,19 @@ use Illuminate\Support\Facades\Auth;
 
 Route::view('/', 'welcome');
 
+Route::get('/test', function () {
+    dd(Carbon::now()->format('Y-m-d'));
+});
+
 Route::get('/dashboard', function () {
     $catalogue = Catalogue::first();
-    return redirect()->route('catalogues.show', $catalogue->id)->with('message', 'testing session message');
+    return view('catalogues.show', ['catalogue' => $catalogue]);
 })
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
-Route::resource('catalogues', CatalogueController::class);
-Route::view('work', 'work')->name('work');
-Route::view('important', 'important')->name('important');
-Route::view('routine', 'routine')->name('routine');
+
+Route::resource('catalogues', CatalogueController::class)->middleware(['auth', 'verified']);
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');

@@ -25,6 +25,10 @@ class Task extends Model
     {
         return $this->belongsTo(Catalogue::class);
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     public function taskBriefs()
     {
         return $this->hasMany(TaskBrief::class);

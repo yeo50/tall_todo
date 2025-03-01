@@ -117,10 +117,6 @@ new class extends Component {
         $this->dispatch('reload-task');
         return;
     }
-    public function testing()
-    {
-        dd($this->task);
-    }
 };
 
 ?>
@@ -274,7 +270,7 @@ new class extends Component {
                                                 @change="dueDropdown= false; $wire.setDue('custom')"
                                                 wire:model.live="due" class="invisible h-0  absolute bottom-0">
                                         </div>
-                                        @if (strlen($reminder) != 0)
+                                        @if (strlen($due) != 0)
                                             <div @click="dueDropdown = false;$wire.set('due', '')"
                                                 class="py-2 text-center border-2 border-transparent text-red-600 hover:border-red-500">
                                                 Remove due date</div>
@@ -324,7 +320,8 @@ new class extends Component {
                                                 date & time</label>
                                             <input type="datetime-local" id="reminderDate" wire:model="reminder"
                                                 @change="reminderDropdown = false;$wire.setReminder('picker')"
-                                                x-ref="reminderPicker" class="invisible h-0 absolute bottom-0">
+                                                x-ref="reminderPicker"
+                                                class="h-[1px] w-[1px] bg-black/0 border-black/0 absolute bottom-0 left-0">
                                         </div>
                                         @if (strlen($reminder) != 0)
                                             <div @click="reminderDropdown = false;$wire.set('reminder', '')"
