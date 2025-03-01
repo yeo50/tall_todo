@@ -12,9 +12,14 @@ class Catalogue extends Model
 {
     /** @use HasFactory<\Database\Factories\CatalogueFactory> */
     use HasFactory;
+
     protected $fillable = ['user_id', 'name'];
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

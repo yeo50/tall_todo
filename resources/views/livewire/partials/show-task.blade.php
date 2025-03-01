@@ -117,10 +117,6 @@ new class extends Component {
         $this->dispatch('reload-task');
         return;
     }
-    public function testing()
-    {
-        dd($this->task);
-    }
 };
 
 ?>

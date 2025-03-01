@@ -11,6 +11,7 @@ use Livewire\Attributes\On;
 new class extends Component {
     #[Validate('required')]
     public $name;
+    public $catalogueId;
     public $catalogueName;
     public $catalogue;
     public $tasks;
@@ -27,13 +28,16 @@ new class extends Component {
 
     public function mount()
     {
-        if ($this->catalogueName === 'important') {
+        $catalogue = Catalogue::find($this->catalogueId);
+
+        if ($catalogue->name === 'important') {
+            $this->catalogueName = 'important';
             $this->catalogue = Catalogue::where('name', 'other')->first();
             $this->tasks = Task::where('important', 1)->get();
             $this->completedTasks = Task::onlyTrashed()->where('important', 1)->get();
             $this->completedCount = $this->completedTasks->count();
         } else {
-            $this->catalogue = Catalogue::where('name', $this->catalogueName)->first();
+            $this->catalogue = $catalogue;
             $this->tasks = $this->catalogue->tasks;
             $this->completedTasks = $this->catalogue->tasks()->onlyTrashed()->get();
             $this->completedCount = $this->completedTasks->count();
@@ -171,10 +175,12 @@ new class extends Component {
     public function forceDelete($id)
     {
         $this->selectedTask = null;
+        $toDel = Task::withTrashed()->findOrFail($id);
 
-        $del = Task::where('id', $id)->withTrashed()->forceDelete();
+        $this->authorize('delete_task', $toDel);
+        $del = $toDel->forceDelete();
 
-        if ($del == 1) {
+        if ($del) {
             $this->reloadTask();
         }
         return;
@@ -193,6 +199,7 @@ new class extends Component {
 };
 ?>
 <div x-data="{ showTask: false, deleteConfirm: false }">
+
 
     <div class=" h-[calc(100vh-170px)] overflow-y-auto"
         :class="{ 'w-[calc(100%-288px)] md:w-[calc(100%-320px)] lg:w-[calc(100%-386px)]': showTask }">

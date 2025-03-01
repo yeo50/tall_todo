@@ -28,9 +28,10 @@
         @endif
 
         <!-- Page Content -->
-        <main class=" lg:flex " x-data="{ open: false }" x-init=" window.addEventListener('resize', () => {
+        <main class=" lg:flex overflow-y-hidden h-[calc(100vh-66px)] " x-data="{ open: false }" x-init=" window.addEventListener('resize', () => {
              open = window.innerWidth >= 1024;
-         });" @remove-menu.window="open = false">
+         });"
+            @remove-menu.window="open = false">
             <section x-show="open"
                 class=" dark:text-white w-48 sm:w-60 lg:w-72 max-lg:fixed left-0 top-[66px] z-50 bg-white dark:bg-gray-900 h-[calc(100vh-66px)] ">
                 <div @click="open = false ; $dispatch('enlarge'); "
@@ -54,7 +55,7 @@
                 </template>
             </section>
             <section :class="open ? 'max-lg:invisible' : ''"
-                class="dark:text-white p-4 flex-1  bg-gray-100 dark:bg-gray-900">
+                class="dark:text-white px-4 pt-4   flex-1  bg-gray-100 dark:bg-gray-900">
                 <div class="flex items-center mb-6">
                     <div class="destination"></div>
                     @if (isset($pageTitleBar))
