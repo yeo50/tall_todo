@@ -246,8 +246,8 @@ new class extends Component {
                                         Tomorrow
                                     </div>
                                     <div @click="$wire.setDue('next_week'); dueDropdown = false;"
-                                        class="py-2 text-center border-2 border-transparent hover:border-blue-800">
-                                        Next week
+                                        class="py-2 text-center border-2 border-transparent hover:border-blue-800">Next
+                                        week
                                     </div>
                                     <div class="relative">
                                         <label for="dateTest"
