@@ -160,7 +160,7 @@ new class extends Component {
                 @endif
 
                 <span class="text-blue-700 ">
-                    @if ($important === 1)
+                    @if ($important === true)
                         <svg wire:click="markImportant()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                             fill="currentColor" class="h-5 w-5">
                             <path fill-rule="evenodd"

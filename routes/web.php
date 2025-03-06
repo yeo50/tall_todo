@@ -5,7 +5,13 @@ use App\Models\Catalogue;
 use Illuminate\Support\Facades\Route;
 
 
-Route::view('/', 'welcome');
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    } else {
+        return view('welcome');
+    }
+});
 
 Route::get('/dashboard', function () {
     $catalogue = Catalogue::first();
