@@ -18,7 +18,8 @@
     <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-gray-900">
         <div>
             <a href="/" wire:navigate>
-                <img src="./storage/photos/rightArrow.png" alt="logo" class="w-20 h-20 ">
+                <img src="https://fls-9e598cd7-ea13-4804-acad-f10a8c140b60.laravel.cloud/rightArrow.png" alt="logo"
+                    class="w-20 h-20 ">
 
             </a>
         </div>
